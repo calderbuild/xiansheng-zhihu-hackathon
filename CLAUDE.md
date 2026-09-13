@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 代码仓库（GitHub 私有）：`github.com/calderbuild/xiansheng-zhihu-hackathon`，`main` 分支，CloudBase 云托管已接自动部署（push 到 main 即触发构建+发布）。部署环境：腾讯云 CloudBase 个人版，环境 ID `cloud1-6ga7vui99fe83bbb`，服务名 `xiansheng`，容器监听 3000、访问端口映射到 80（Dockerfile 里非 root 用户不能绑 80，见 `Dockerfile` 注释）。**公网体验链接（已端到端验证可用）：`https://xiansheng-313076-9-1338128086.sh.run.tcloudbase.com/`**。
 
-生产环境变量在 CloudBase 控制台单独配置（服务详情 → 更新服务 → 环境变量设置），**不是**从仓库的 `.env.local` 读取——`.dockerignore` 把 `.env.local` 排除在构建上下文之外，这是故意的（凭证不进镜像），但意味着每加一个新的 secret 都要同时在 CloudBase 控制台手动补一份，光加进 `.env.local` 本地能跑、线上会因为拿不到环境变量而报错或静默走不到该分支。当前线上已配置：`ZHIHU_ACCESS_SECRET`、`OPENAI_NEXT_API_KEY`、`OPENAI_NEXT_BASE_URL`。
+生产环境变量在 CloudBase 控制台单独配置（服务详情 → 更新服务 → 环境变量设置），**不是**从仓库的 `.env.local` 读取——`.dockerignore` 把 `.env.local` 排除在构建上下文之外，这是故意的（凭证不进镜像），但意味着每加一个新的 secret 都要同时在 CloudBase 控制台手动补一份，光加进 `.env.local` 本地能跑、线上会因为拿不到环境变量而报错或静默走不到该分支。当前线上已配置：`ZHIHU_ACCESS_SECRET`、`OPENAI_NEXT_API_KEY`、`OPENAI_NEXT_BASE_URL`、`ZHIHU_OAUTH_APP_ID`、`ZHIHU_OAUTH_APP_KEY`、`ZHIHU_OAUTH_REDIRECT_URI`。**改环境变量优先用"JSON 输入"模式**（环境变量设置区的 tab 切换），整份 JSON 一次性覆盖比逐行填"可视化输入"安全——后者的 key/value 输入框是按 DOM 顺序 0 索引的，点"添加"新增的空行会排在已有行后面，脚本按索引批量填值时如果没数对已有行数，会把新值错误地写进已有行、覆盖掉原有 key，此前踩过一次（写进空 JSON 前一定要先读一遍当前 JSON 全文核对）。
 
 **常用命令**：
 - `npm run dev` — 本地开发服务器（`localhost:3000`）
@@ -23,6 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - CloudBase 免费体验版环境新建后可能直接报"资源已临时隔离"，需升级到个人版（¥19.90/月起）才能用，详见 `~/.claude/projects/-Users-calder-hackathon-ieee-ies-genai-2026/memory/reference_hackathon_execution_playbook.md` 对应条目。
 - **CloudBase 容器"运行正常"不代表功能正常**：健康检查只看容器起没起来、端口有没有响应，不检查业务逻辑能不能跑。部署 003 曾长时间显示"正常"，但线上完全没配 `ZHIHU_ACCESS_SECRET`（环境变量设置那栏是空的 `--`），意味着 `/api/discover`、`/api/icebreaker` 会稳定 500——如果没有专门去公网链接手测一次完整流程，这个问题会被"部署成功"的绿色状态完全掩盖。**每次改了会影响生产的配置后，必须实际打开公网 URL 走一遍核心链路（搜索 + 生成开场白），不能只看 CloudBase 控制台的状态灯**。
 - `/api/icebreaker` 遇到 `ZhihuQuotaError`（知乎直答 100 次/天配额打满）会自动 fallback 到 `src/lib/openai-fallback.ts`（OpenAI-next 代理，模型 `gpt-4o-mini`）。该端点在 Node 默认 fetch UA 下会被 Cloudflare 拦（403 error 1010），已在实现里带上浏览器 UA 绕过，别去掉这个 header。
+- **CloudBase 的反向代理不把公网 Host 转发进容器**：`/api/auth/{login,callback,logout}` 里如果用 `new URL('/', request.url)` 构造重定向目标，线上会解析成容器内部绑定地址 `http://0.0.0.0:3000`（浏览器访问不到，OAuth 登录成功后卡在一个连不上的地址），本地 `npm run dev` 完全看不出这个问题（本地 Host 头正常）。已改用 `getAppOrigin()`（`src/lib/zhihu-oauth.ts`，从 `ZHIHU_OAUTH_REDIRECT_URI` 反推 origin）替代 `request.url`，以后这三个路由的重定向目标一律走这个 helper，不要改回 `request.url`。
+- **CloudBase 部署偶发在健康检查阶段失败**（部署日志会看到 `Liveness probe failed: dial tcp <podIP>:80: connect: connection refused`，即使应用自己的启动日志显示 `✓ Ready`），发生频率不低（10 次部署里出现过 6 次），和代码改动无关，直接在"更新服务"里原样重新点一次"部署"通常第二次就能过；失败的版本不会抢占流量（CloudBase 保留上一个"正常"版本继续 100% 服务），所以不是紧急故障，但每次改完生产配置都要盯着部署列表确认最终有一个"正常"版本、且流量确实切过去了。
+- **知乎登录回调地址（redirect_uri）要在黑客松项目的编辑页单独登记**，和 `.env.local`/CloudBase 环境变量里的 `ZHIHU_OAUTH_REDIRECT_URI` 必须完全一致，两处不同步会导致点"确认授权"后静默失败（Zhihu 侧 `POST /oauth` 返回 200 但 body 是错误，授权页无任何可见提示）。登记入口：`https://www.zhihu.com/hackathon?activity_code=zhihu_hackathon_2026_p2` → 参赛队伍/项目展示 → "我的项目" → 先声卡片 → "编辑项目" → "知乎登录回调地址"字段（新建项目时默认是占位值 `http://127.0.0.1`，必须手动改成真实回调地址）。
 
 ## 权威信息源，别重复调研
 
