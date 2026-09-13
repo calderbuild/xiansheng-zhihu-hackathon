@@ -10,6 +10,7 @@ import { NotFoundState } from './NotFoundState';
 import { IcebreakerGenerating } from './IcebreakerGenerating';
 import { IcebreakerResult } from './IcebreakerResult';
 import { AuthBadge } from './AuthBadge';
+import { VideoIntro } from './VideoIntro';
 
 type Stage = 'intro' | 'loading' | 'results' | 'not-found' | 'generating' | 'generated';
 
@@ -77,7 +78,10 @@ export function HomeExperience() {
       <AuthBadge />
       <div className="flex flex-1 flex-col justify-center gap-10">
         {stage === 'intro' && (
-          <IntroSection initialSituation={discover.situation} error={error} onSubmit={handleDiscover} />
+          <>
+            <VideoIntro />
+            <IntroSection initialSituation={discover.situation} error={error} onSubmit={handleDiscover} />
+          </>
         )}
         {stage === 'loading' && <LoadingSearch />}
         {stage === 'results' && (
