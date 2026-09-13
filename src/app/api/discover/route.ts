@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
       cacheSet(cacheKey, result, TTL.SEARCH);
     }
 
-    const candidates = dedupeCandidates(result.items).slice(0, MAX_CANDIDATES);
+    const candidates = dedupeCandidates(result.items, query).slice(0, MAX_CANDIDATES);
 
     const response: DiscoverResponse = {
       query,

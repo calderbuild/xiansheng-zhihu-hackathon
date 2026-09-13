@@ -54,7 +54,12 @@ describe('POST /api/discover', () => {
 
   it('dedupes by author and caps at 8 candidates', async () => {
     const items = Array.from({ length: 12 }, (_, i) =>
-      makeItem({ ContentID: String(i), AuthorName: `author-${i}`, VoteUpCount: i }),
+      makeItem({
+        ContentID: String(i),
+        AuthorName: `author-${i}`,
+        VoteUpCount: i,
+        ContentText: '这是一段关于读研还是工作的真实经历分享，内容足够长',
+      }),
     );
     vi.mocked(searchZhihu).mockResolvedValue({ items, emptyReason: undefined });
 
@@ -63,6 +68,19 @@ describe('POST /api/discover', () => {
 
     expect(data.notFound).toBe(false);
     expect(data.candidates.length).toBeLessThanOrEqual(8);
+  });
+
+  it('treats API results with no real overlap as not found', async () => {
+    const items = [
+      makeItem({ ContentText: '这是一段和处境完全无关的知乎内容，但长度足够通过长度检查' }),
+    ];
+    vi.mocked(searchZhihu).mockResolvedValue({ items, emptyReason: undefined });
+
+    const response = await POST(makeRequest('我在纠结要不要去南极科考'));
+    const data = await response.json();
+
+    expect(data.notFound).toBe(true);
+    expect(data.candidates).toHaveLength(0);
   });
 
   it('returns 400 when situation is missing', async () => {

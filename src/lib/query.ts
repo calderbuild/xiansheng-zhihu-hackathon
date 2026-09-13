@@ -26,11 +26,41 @@ export function deriveSearchQuery(situation: string): string {
 
 const MIN_CONTENT_LENGTH = 20;
 
-export function dedupeCandidates(items: ZhihuSearchItem[]): Candidate[] {
+function extractBigrams(text: string): Set<string> {
+  const clean = text.replace(/[？?。！!，,\s]/g, '');
+  const bigrams = new Set<string>();
+  for (let i = 0; i < clean.length - 1; i++) {
+    bigrams.add(clean.slice(i, i + 2));
+  }
+  return bigrams;
+}
+
+/**
+ * Zhihu's search is fuzzy/semantic and almost never returns zero results, even
+ * for gibberish input — it'll happily match on theme alone (e.g. a string of
+ * random rare characters pulls back articles about rare characters). Requiring
+ * a literal 2-character overlap with the query is what actually distinguishes
+ * "found someone relevant" from "found something that merely ranked."
+ */
+export function isRelevant(query: string, candidateText: string): boolean {
+  const queryBigrams = extractBigrams(query);
+  if (queryBigrams.size === 0) return true;
+  const textBigrams = extractBigrams(candidateText);
+  for (const bigram of queryBigrams) {
+    if (textBigrams.has(bigram)) return true;
+  }
+  return false;
+}
+
+export function dedupeCandidates(items: ZhihuSearchItem[], query: string): Candidate[] {
   const byAuthor = new Map<string, ZhihuSearchItem>();
 
   for (const item of items) {
-    if (item.ContentText.replace(/<\/?em>/g, '').length < MIN_CONTENT_LENGTH) {
+    const plainText = item.ContentText.replace(/<\/?em>/g, '');
+    if (plainText.length < MIN_CONTENT_LENGTH) {
+      continue;
+    }
+    if (!isRelevant(query, `${item.Title}${plainText}`)) {
       continue;
     }
 
