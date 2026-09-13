@@ -8,3 +8,9 @@ build/
 .next/
 .vercel/
 *.tsbuildinfo
+
+# internal research notes and third-party copyrighted material, kept local only
+CONTEXT.md
+docs/official-handbook.md
+*.pdf
+docs/handoffs/
