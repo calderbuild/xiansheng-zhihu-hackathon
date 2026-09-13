@@ -1,1 +1,62 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-ink: #16171b;
+  --color-ink-raised: #1e2025;
+  --color-ink-line: #2b2d33;
+  --color-paper: #ede6d8;
+  --color-paper-dim: #948d7c;
+  --color-ember: #ce7c3e;
+  --color-ember-soft: #ce7c3e26;
+  --color-moss: #7e8b5e;
+  --color-brick: #b24b3c;
+
+  --font-display: var(--font-noto-serif-sc), 'Songti SC', serif;
+  --font-body: var(--font-noto-sans-sc), -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+  --font-signal: var(--font-jetbrains-mono), ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-body);
+}
+
+::selection {
+  background: var(--color-ember-soft);
+  color: var(--color-paper);
+}
+
+textarea:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-ember);
+  outline-offset: 2px;
+}
+
+@keyframes waveform-pulse {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.waveform-bar {
+  transform-origin: center;
+  transition: transform 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.waveform-bar--live {
+  animation: waveform-pulse 1.1s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .waveform-bar--live {
+    animation: none;
+    transform: scaleY(0.7);
+  }
+}
