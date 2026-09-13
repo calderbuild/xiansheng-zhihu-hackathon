@@ -1,0 +1,10 @@
+.env
+.env.local
+.env.*.local
+node_modules/
+.ruff_cache/
+dist/
+build/
+.next/
+.vercel/
+*.tsbuildinfo
