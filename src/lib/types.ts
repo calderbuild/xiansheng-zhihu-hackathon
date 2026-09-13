@@ -50,6 +50,7 @@ export interface SessionStatus {
   connected: boolean;
   expiresAt?: number;
   user?: {
+    uid: string;
     name?: string;
     avatarUrl?: string;
   };

@@ -9,6 +9,7 @@ import { CandidateList } from './CandidateList';
 import { NotFoundState } from './NotFoundState';
 import { IcebreakerGenerating } from './IcebreakerGenerating';
 import { IcebreakerResult } from './IcebreakerResult';
+import { AuthBadge } from './AuthBadge';
 
 type Stage = 'intro' | 'loading' | 'results' | 'not-found' | 'generating' | 'generated';
 
@@ -72,41 +73,44 @@ export function HomeExperience() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col justify-center gap-10 px-6 py-16">
-      {stage === 'intro' && (
-        <IntroSection initialSituation={discover.situation} error={error} onSubmit={handleDiscover} />
-      )}
-      {stage === 'loading' && <LoadingSearch />}
-      {stage === 'results' && (
-        <>
-          {error && (
-            <p role="alert" className="text-center text-sm text-brick">
-              {error}
-            </p>
-          )}
-          <CandidateList
-            query={discover.query}
-            candidates={discover.candidates}
-            onPick={handlePick}
-            onRetry={backToIntro}
+    <main className="mx-auto flex min-h-screen w-full max-w-2xl flex-col gap-6 px-6 py-16">
+      <AuthBadge />
+      <div className="flex flex-1 flex-col justify-center gap-10">
+        {stage === 'intro' && (
+          <IntroSection initialSituation={discover.situation} error={error} onSubmit={handleDiscover} />
+        )}
+        {stage === 'loading' && <LoadingSearch />}
+        {stage === 'results' && (
+          <>
+            {error && (
+              <p role="alert" className="text-center text-sm text-brick">
+                {error}
+              </p>
+            )}
+            <CandidateList
+              query={discover.query}
+              candidates={discover.candidates}
+              onPick={handlePick}
+              onRetry={backToIntro}
+            />
+          </>
+        )}
+        {stage === 'not-found' && (
+          <NotFoundState query={discover.query} emptyReason={discover.emptyReason} onRetry={backToIntro} />
+        )}
+        {stage === 'generating' && selected && <IcebreakerGenerating authorName={selected.authorName} />}
+        {stage === 'generated' && selected && (
+          <IcebreakerResult
+            candidate={selected}
+            message={message}
+            onPickAnother={() => setStage('results')}
+            onStartOver={() => {
+              setDiscover({ situation: '', query: '', candidates: [] });
+              setStage('intro');
+            }}
           />
-        </>
-      )}
-      {stage === 'not-found' && (
-        <NotFoundState query={discover.query} emptyReason={discover.emptyReason} onRetry={backToIntro} />
-      )}
-      {stage === 'generating' && selected && <IcebreakerGenerating authorName={selected.authorName} />}
-      {stage === 'generated' && selected && (
-        <IcebreakerResult
-          candidate={selected}
-          message={message}
-          onPickAnother={() => setStage('results')}
-          onStartOver={() => {
-            setDiscover({ situation: '', query: '', candidates: [] });
-            setStage('intro');
-          }}
-        />
-      )}
+        )}
+      </div>
     </main>
   );
 }
