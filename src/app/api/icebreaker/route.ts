@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { askZhida, ZhihuQuotaError } from '@/lib/zhihu';
+import { askOpenAiNextFallback } from '@/lib/openai-fallback';
 import { cacheGet, cacheSet, TTL } from '@/lib/cache';
 import type { IcebreakerRequest, IcebreakerResponse } from '@/lib/types';
 
@@ -52,10 +53,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message } satisfies IcebreakerResponse);
   } catch (error) {
     if (error instanceof ZhihuQuotaError) {
-      return NextResponse.json(
-        { error: '知乎直答今日额度已用完，请稍后再试' },
-        { status: 429 },
-      );
+      // ponytail: zhida shares one 100-req/day quota pool across the whole hackathon —
+      // fall back to the OpenAI-next credits endpoint instead of surfacing an error here.
+      try {
+        const message = await askOpenAiNextFallback([{ role: 'user', content: userPrompt }]);
+        cacheSet(cacheKey, message, TTL.ICEBREAKER);
+        return NextResponse.json({ message } satisfies IcebreakerResponse);
+      } catch (fallbackError) {
+        console.error('openai-next fallback failed', fallbackError);
+        return NextResponse.json(
+          { error: '知乎直答今日额度已用完，请稍后再试' },
+          { status: 429 },
+        );
+      }
     }
     console.error('icebreaker route failed', error);
     return NextResponse.json({ error: '生成暂时不可用，请稍后再试' }, { status: 502 });

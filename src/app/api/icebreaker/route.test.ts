@@ -6,7 +6,12 @@ vi.mock('@/lib/zhihu', () => ({
   ZhihuQuotaError: class ZhihuQuotaError extends Error {},
 }));
 
-import { askZhida } from '@/lib/zhihu';
+vi.mock('@/lib/openai-fallback', () => ({
+  askOpenAiNextFallback: vi.fn(),
+}));
+
+import { askZhida, ZhihuQuotaError } from '@/lib/zhihu';
+import { askOpenAiNextFallback } from '@/lib/openai-fallback';
 import { POST } from './route';
 import type { Candidate } from '@/lib/types';
 
@@ -31,6 +36,7 @@ function makeRequest(body: unknown) {
 
 beforeEach(() => {
   vi.mocked(askZhida).mockReset();
+  vi.mocked(askOpenAiNextFallback).mockReset();
 });
 
 describe('POST /api/icebreaker', () => {
@@ -51,5 +57,24 @@ describe('POST /api/icebreaker', () => {
   it('returns 400 when situation is missing', async () => {
     const response = await POST(makeRequest({ candidate }));
     expect(response.status).toBe(400);
+  });
+
+  it('falls back to openai-next when zhida quota is exhausted', async () => {
+    vi.mocked(askZhida).mockRejectedValue(new ZhihuQuotaError(30001, 'quota exceeded'));
+    vi.mocked(askOpenAiNextFallback).mockResolvedValue('备用生成的开场白');
+
+    const response = await POST(makeRequest({ candidate, situation: '我在纠结要不要辞职去读研' }));
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.message).toBe('备用生成的开场白');
+  });
+
+  it('returns 429 when both zhida and the fallback fail', async () => {
+    vi.mocked(askZhida).mockRejectedValue(new ZhihuQuotaError(30001, 'quota exceeded'));
+    vi.mocked(askOpenAiNextFallback).mockRejectedValue(new Error('fallback down'));
+
+    const response = await POST(makeRequest({ candidate, situation: '我在纠结要不要转专业' }));
+    expect(response.status).toBe(429);
   });
 });
