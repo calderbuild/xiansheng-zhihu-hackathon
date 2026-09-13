@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { clearOAuthState, clearSession } from '@/lib/auth';
+import { getAppOrigin } from '@/lib/zhihu-oauth';
 
-export function GET(request: NextRequest) {
-  const home = new URL('/', request.url);
+export function GET() {
+  const home = new URL('/', getAppOrigin());
   home.searchParams.set('auth', 'disconnected');
   const response = NextResponse.redirect(home);
   clearOAuthState(response);

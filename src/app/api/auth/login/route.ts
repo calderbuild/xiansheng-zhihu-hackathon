@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { createOAuthState, hasOAuthConfig, writeOAuthState } from '@/lib/auth';
-import { buildZhihuAuthorizationUrl } from '@/lib/zhihu-oauth';
+import { buildZhihuAuthorizationUrl, getAppOrigin } from '@/lib/zhihu-oauth';
 
-export function GET(request: NextRequest) {
-  const home = new URL('/', request.url);
+export function GET() {
+  const home = new URL('/', getAppOrigin());
 
   if (!hasOAuthConfig()) {
     home.searchParams.set('auth', 'misconfigured');

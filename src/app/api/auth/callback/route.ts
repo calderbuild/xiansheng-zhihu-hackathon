@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearOAuthState, clearSession, createSessionFromCode, readOAuthState, writeSession } from '@/lib/auth';
+import { getAppOrigin } from '@/lib/zhihu-oauth';
 
 export async function GET(request: NextRequest) {
-  const home = new URL('/', request.url);
+  const home = new URL('/', getAppOrigin());
   // hackathon-oauth.md: callback param is `authorization_code`; accept `code` too
   // in case of a protocol revision (oauth.md notes this as the compatibility fallback).
   const code = request.nextUrl.searchParams.get('authorization_code') ?? request.nextUrl.searchParams.get('code');

@@ -19,6 +19,14 @@ export function hasZhihuOAuthConfig() {
   return Boolean(process.env.ZHIHU_OAUTH_APP_ID && process.env.ZHIHU_OAUTH_APP_KEY);
 }
 
+// ponytail: CloudBase's proxy doesn't forward the public Host header to the
+// container, so `request.url` inside route handlers resolves to the internal
+// bind address (0.0.0.0:3000) instead of the real domain — deriving the origin
+// from the already-correct ZHIHU_OAUTH_REDIRECT_URI avoids trusting request.url.
+export function getAppOrigin() {
+  return new URL(getZhihuOAuthRedirectUri()).origin;
+}
+
 export function getZhihuOAuthRedirectUri() {
   return (
     process.env.ZHIHU_OAUTH_REDIRECT_URI ||
