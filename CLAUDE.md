@@ -4,9 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 当前状态
 
-这是知乎黑客松 2026·校园新锐季的参赛仓库。**目前没有任何应用代码**，只有赛前调研文档和官方发的 Zhihu skill 包。开发窗口是 2026-09-13 10:00 - 09-15 10:00（48 小时），窗口开启前不要假设已经有代码结构可复用。
+知乎黑客松 2026·校园新锐季参赛项目"先声"。Next.js 16（App Router）+ TypeScript + Tailwind v4，工程计划见 `/Users/calder/.claude/plans/distributed-leaping-bee.md`（源于头脑对齐，任务顺序以它为准）。开发窗口 2026-09-13 10:00 - 09-15 10:00（48 小时）。
 
-不是 git 仓库。没有 package.json / requirements.txt / 任何构建配置——不用去找 build/lint/test 命令，现在没有。一旦开始写代码，把实际用到的运行/测试命令补进本文件。
+代码仓库（GitHub 私有）：`github.com/calderbuild/xiansheng-zhihu-hackathon`，`main` 分支，CloudBase 云托管已接自动部署（push 到 main 即触发构建+发布）。部署环境：腾讯云 CloudBase 个人版，环境 ID `cloud1-6ga7vui99fe83bbb`，服务名 `xiansheng`，容器监听 3000、访问端口映射到 80（Dockerfile 里非 root 用户不能绑 80，见 `Dockerfile` 注释）。
+
+**常用命令**：
+- `npm run dev` — 本地开发服务器（`localhost:3000`）
+- `npm run build` — 生产构建（`next.config.ts` 设了 `output: 'standalone'`，配合 `Dockerfile` 用）
+- `npm test` — Vitest 全部走 mock，零网络请求
+- `npm run lint` — ESLint，`--max-warnings=0`
+- `npx tsc --noEmit` — 单独类型检查
+
+**已知坑（别重踩）**：
+- `askZhida` 用 `zhida-fast-1p5` 时，system-role 指令会被稳定忽略（模型倾向写知乎风格的长文分析而不是私信开场白），把指令+一次性格式范例放进单条 user message（不用 system message）才可靠，已在 `src/app/api/icebreaker/route.ts` 里验证过短/长真实内容两种情况，详见该文件里的 `ponytail:` 注释。
+- `/api/icebreaker` 的结果按 `candidate.contentId + situation` 哈希缓存在进程内存（`src/lib/cache.ts`），本地开发时同一对组合会一直吃缓存——测新 prompt 前重启 `npm run dev` 清缓存，或换一个候选人/处境描述。
+- CloudBase 免费体验版环境新建后可能直接报"资源已临时隔离"，需升级到个人版（¥19.90/月起）才能用，详见 `~/.claude/projects/-Users-calder-hackathon-ieee-ies-genai-2026/memory/reference_hackathon_execution_playbook.md` 对应条目。
 
 ## 权威信息源，别重复调研
 
