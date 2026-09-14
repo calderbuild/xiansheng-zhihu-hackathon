@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono, Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google';
+import { getAppOrigin } from '@/lib/zhihu-oauth';
 import './globals.css';
 
 const notoSerifSC = Noto_Serif_SC({
@@ -23,9 +24,30 @@ const jetbrainsMono = JetBrains_Mono({
   display: 'swap',
 });
 
+const title = '先声 · 找到已经做过这件事的人';
+const description = '描述你正纠结的处境,找到知乎上已经做过这件事的人,生成一段基于对方真实经历的破冰开场白。';
+
 export const metadata: Metadata = {
-  title: '先声 · 找到已经做过这件事的人',
-  description: '描述你正纠结的处境,找到知乎上已经做过这件事的人,生成一段基于对方真实经历的破冰开场白。',
+  metadataBase: new URL(getAppOrigin()),
+  title,
+  description,
+  openGraph: {
+    title,
+    description,
+    type: 'website',
+    locale: 'zh_CN',
+    images: ['/videos/xiansheng-intro-poster.jpg'],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: ['/videos/xiansheng-intro-poster.jpg'],
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#16171b',
 };
 
 export default function RootLayout({
