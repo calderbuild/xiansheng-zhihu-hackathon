@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { JetBrains_Mono, Noto_Sans_SC, Noto_Serif_SC } from 'next/font/google';
-import { getAppOrigin } from '@/lib/zhihu-oauth';
 import './globals.css';
+
+// ponytail: `/` is statically prerendered, so this metadata is baked in during
+// `next build` inside the Docker build stage — before CloudBase injects its
+// runtime env vars into the container. Deriving this from ZHIHU_OAUTH_REDIRECT_URI
+// (like the OAuth routes do) silently resolves to the http://localhost:3000
+// fallback instead; hardcode the known production origin here instead.
+const APP_ORIGIN = 'https://xiansheng-313076-9-1338128086.sh.run.tcloudbase.com';
 
 const notoSerifSC = Noto_Serif_SC({
   weight: ['600', '700'],
@@ -28,7 +34,7 @@ const title = '先声 · 找到已经做过这件事的人';
 const description = '描述你正纠结的处境,找到知乎上已经做过这件事的人,生成一段基于对方真实经历的破冰开场白。';
 
 export const metadata: Metadata = {
-  metadataBase: new URL(getAppOrigin()),
+  metadataBase: new URL(APP_ORIGIN),
   title,
   description,
   openGraph: {

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 知乎黑客松 2026·校园新锐季参赛项目"先声"。Next.js 16（App Router）+ TypeScript + Tailwind v4，工程计划见 `/Users/calder/.claude/plans/distributed-leaping-bee.md`（源于头脑对齐，任务顺序以它为准）。开发窗口 2026-09-13 10:00 - 09-15 10:00（48 小时）。
 
-代码仓库（GitHub 私有）：`github.com/calderbuild/xiansheng-zhihu-hackathon`，`main` 分支，CloudBase 云托管已接自动部署（push 到 main 即触发构建+发布）。部署环境：腾讯云 CloudBase 个人版，环境 ID `cloud1-6ga7vui99fe83bbb`，服务名 `xiansheng`，容器监听 3000、访问端口映射到 80（Dockerfile 里非 root 用户不能绑 80，见 `Dockerfile` 注释）。**公网体验链接（已端到端验证可用）：`https://xiansheng-313076-9-1338128086.sh.run.tcloudbase.com/`**。
+代码仓库（GitHub 公开）：`github.com/calderbuild/xiansheng-zhihu-hackathon`，`main` 分支。**CloudBase 云托管接的是 git 仓库源，不是 push 自动触发 webhook**——2026-09-14 实测验证过：push 后 13 分钟零构建，控制台"部署版本"列表原地不动；正确流程是每次 push 后手动进控制台 服务详情 → 更新服务（拉的是当前 `main` HEAD）→ 弹窗选"发布版本并自动切换流量至新版本" → 部署，才会触发真正的构建+发布（会生成新的部署 ID，如 021）。部署环境：腾讯云 CloudBase 个人版，环境 ID `cloud1-6ga7vui99fe83bbb`，服务名 `xiansheng`，容器监听 3000、访问端口映射到 80（Dockerfile 里非 root 用户不能绑 80，见 `Dockerfile` 注释）。**公网体验链接（已端到端验证可用）：`https://xiansheng-313076-9-1338128086.sh.run.tcloudbase.com/`**。
 
 生产环境变量在 CloudBase 控制台单独配置（服务详情 → 更新服务 → 环境变量设置），**不是**从仓库的 `.env.local` 读取——`.dockerignore` 把 `.env.local` 排除在构建上下文之外，这是故意的（凭证不进镜像），但意味着每加一个新的 secret 都要同时在 CloudBase 控制台手动补一份，光加进 `.env.local` 本地能跑、线上会因为拿不到环境变量而报错或静默走不到该分支。当前线上已配置：`ZHIHU_ACCESS_SECRET`、`OPENAI_NEXT_API_KEY`、`OPENAI_NEXT_BASE_URL`、`ZHIHU_OAUTH_APP_ID`、`ZHIHU_OAUTH_APP_KEY`、`ZHIHU_OAUTH_REDIRECT_URI`。**改环境变量优先用"JSON 输入"模式**（环境变量设置区的 tab 切换），整份 JSON 一次性覆盖比逐行填"可视化输入"安全——后者的 key/value 输入框是按 DOM 顺序 0 索引的，点"添加"新增的空行会排在已有行后面，脚本按索引批量填值时如果没数对已有行数，会把新值错误地写进已有行、覆盖掉原有 key，此前踩过一次（写进空 JSON 前一定要先读一遍当前 JSON 全文核对）。
 
