@@ -14,3 +14,9 @@ CONTEXT.md
 docs/official-handbook.md
 *.pdf
 docs/handoffs/
+
+# video-production source project (renders already copied into public/videos/)
+videos/
+
+# Claude Code session-local runtime state
+.claude/scheduled_tasks.lock
